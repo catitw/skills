@@ -1,2 +1,5 @@
 # pi agent runtime state (sessions, flow history)
 .pi/
+
+# Claude Code local agent worktrees
+.claude/worktrees/

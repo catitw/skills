@@ -1,0 +1,52 @@
+set shell := ["nu", "-c"]
+
+repo := "https://github.com/hardikpandya/stop-slop.git"
+source_dir := "source"
+skill_dir := "../../skills/stop-slop"
+
+# Refresh this upstream's complete source tree from GitHub.
+refresh:
+    #!/usr/bin/env nu
+    let source_dir = "{{ source_dir }}"
+    let tmp = (mktemp -d)
+    try {
+        let repo_dir = ($tmp | path join repo)
+        git clone --depth 1 {{ repo }} $repo_dir
+        mkdir $source_dir
+        rsync -a --delete --exclude .git $"($repo_dir)/" $source_dir
+    } catch {|err|
+        rm -rf $tmp
+        error make $err
+    }
+    rm -rf $tmp
+
+# Copy this upstream skill into the repository's publishable skills/ layout.
+sync:
+    #!/usr/bin/env nu
+    let source_dir = "{{ source_dir }}"
+    let skill_dir = "{{ skill_dir }}"
+    let required_paths = [
+        ($source_dir | path join SKILL.md)
+        ($source_dir | path join LICENSE)
+        ($source_dir | path join references)
+    ]
+
+    for required_path in $required_paths {
+        if not ($required_path | path exists) {
+            error make { msg: $"Missing required upstream file: ($required_path)" }
+        }
+    }
+
+    let parent_dir = ($skill_dir | path dirname)
+    let tmp = (mktemp -d -p $parent_dir)
+    try {
+        let next_dir = ($tmp | path join stop-slop)
+        mkdir $next_dir
+        cp -r ($source_dir | path join SKILL.md) ($source_dir | path join LICENSE) ($source_dir | path join references) $next_dir
+        rm -rf $skill_dir
+        mv $next_dir $skill_dir
+    } catch {|err|
+        rm -rf $tmp
+        error make $err
+    }
+    rm -rf $tmp
