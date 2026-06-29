@@ -10,6 +10,7 @@ others).
 | ----- | ----------- |
 | [`code-comments`](./skills/code-comments/SKILL.md) | Write high-signal, plain-language code comments for Rust — structure explains the *what*, comments explain the *why*, the *why-not*, the invariants, and the safety reasoning. |
 | [`stop-slop`](./skills/stop-slop/SKILL.md) | Remove predictable AI writing patterns from prose, including filler phrases, formulaic structures, passive voice, vague declaratives, and other common AI tells. |
+| [`llm-wiki`](./skills/llm-wiki/SKILL.md) | Build and maintain a persistent, interlinked markdown knowledge base (Karpathy's LLM Wiki pattern) — ingest sources, cross-reference pages, query a compounding wiki, and lint it for drift. |
 
 ## Install
 

@@ -1,0 +1,52 @@
+set shell := ["nu", "-c"]
+
+repo := "https://github.com/NousResearch/hermes-agent.git"
+upstream_path := "skills/research/llm-wiki"
+source_dir := "source"
+skill_dir := "../../skills/llm-wiki"
+
+# Refresh this upstream's complete source tree from GitHub.
+# llm-wiki lives in a subdirectory of the NousResearch/hermes-agent monorepo;
+# its MIT LICENSE lives at the repo root, so both are staged into source/.
+refresh:
+    #!/usr/bin/env nu
+    let tmp = (mktemp -d)
+    try {
+        let repo_dir = ($tmp | path join repo)
+        git clone --depth 1 {{ repo }} $repo_dir
+        let upstream_skill_dir = ($repo_dir | path join {{ upstream_path }})
+        let stage = ($tmp | path join stage)
+        mkdir $stage
+        rsync -a $"($upstream_skill_dir)/" $"($stage)/"
+        cp ($repo_dir | path join LICENSE) ($stage | path join LICENSE)
+        mkdir {{ source_dir }}
+        rsync -a --delete --exclude .git $"($stage)/" {{ source_dir }}
+    } catch {|err|
+        rm -rf $tmp
+        error make $err
+    }
+    rm -rf $tmp
+
+# Copy this upstream skill into the repository's publishable skills/ layout.
+sync:
+    #!/usr/bin/env nu
+    let source_dir = "{{ source_dir }}"
+    let skill_dir = "{{ skill_dir }}"
+    let skill_md = ($source_dir | path join SKILL.md)
+    if not ($skill_md | path exists) {
+        error make { msg: $"Missing required upstream file: ($skill_md)" }
+    }
+
+    let parent_dir = ($skill_dir | path dirname)
+    let tmp = (mktemp -d -p $parent_dir)
+    try {
+        let next_dir = ($tmp | path join llm-wiki)
+        mkdir $next_dir
+        rsync -a $"($source_dir)/" $next_dir
+        rm -rf $skill_dir
+        mv $next_dir $skill_dir
+    } catch {|err|
+        rm -rf $tmp
+        error make $err
+    }
+    rm -rf $tmp
